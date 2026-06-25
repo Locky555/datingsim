@@ -327,138 +327,569 @@
 </div>
 
 <script>
-  // -------------------------------------------------
-  // Conversation history (session only)
-  // -------------------------------------------------
-  const MAX_HISTORY = 10;
 
-  function getHistory() {
-    const saved = sessionStorage.getItem("conversationHistory");
-    return saved ? JSON.parse(saved) : [];
-  }
 
-  function saveHistory(history) {
-    sessionStorage.setItem("conversationHistory", JSON.stringify(history));
-  }
+const MAX_HISTORY = 10;
 
-  function addToHistory(userMessage, mathewReply) {
-    let history = getHistory();
-    history.push({ user: userMessage, mathew: mathewReply });
-    if (history.length > MAX_HISTORY) history.shift();
-    saveHistory(history);
-  }
 
-  // -------------------------------------------------
-  // UI helpers
-  // -------------------------------------------------
-  function updateMeter(affection) {
-    document.getElementById("meterFill").style.width = affection + "%";
-    document.getElementById("affectionNum").textContent = affection + " / 100";
-    const hearts = document.querySelectorAll(".heart");
-    const filled = Math.ceil((affection / 100) * 5);
-    hearts.forEach((h, i) => h.classList.toggle("filled", i < filled));
-  }
+// ===============================
+// Browser Game State
+// ===============================
 
-  function updateEmotion(emotion) {
-    const badge = document.getElementById("emotionBadge");
-    const portrait = document.getElementById("portrait");
-    badge.textContent = emotion;
-    portrait.src = `images/${emotion}.jpg`;
-    portrait.onerror = () => { portrait.src = "images/default.jpg"; };
-  }
 
-  function addBubble(text, who) {
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = `bubble ${who}`;
-    div.textContent = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
+function getGameState(){
 
-  function showReason(change, reason) {
-    const el = document.getElementById("reasonText");
-    const sign = change > 0 ? "+" : "";
-    const color = change > 0 ? "#7C5C3E" : change < 0 ? "#C0634E" : "#9A8070";
-    el.innerHTML = change !== 0
-      ? `<span style="color:${color};font-weight:700">${sign}${change}</span> — ${reason}`
-      : `<span style="color:#9A8070">${reason}</span>`;
-  }
+    const saved =
+        localStorage.getItem("mathewState");
 
-  // -------------------------------------------------
-  // Send message
-  // -------------------------------------------------
-  async function sendMessage() {
-    const input = document.getElementById("message");
-    const btn = document.getElementById("sendBtn");
-    const portrait = document.getElementById("portrait");
-    const badge = document.getElementById("emotionBadge");
-    const text = input.value.trim();
-    if (!text) return;
 
-    addBubble(text, "player");
-    input.value = "";
-    btn.disabled = true;
+    if(saved){
 
-    // Thinking state
-    const n = Math.floor(Math.random() * 19) + 1;
-    portrait.src = `images/thinking${n}.jpg`;
-    portrait.onerror = () => { portrait.src = "images/default.jpg"; };
-    badge.textContent = "thinking...";
-
-    // Typing bubble
-    const typing = document.createElement("div");
-    typing.className = "bubble mathew";
-    typing.textContent = "...";
-    typing.id = "typing";
-    document.getElementById("chat").appendChild(typing);
-    document.getElementById("chat").scrollTop = 99999;
-
-    try {
-      const res = await fetch("https://theology-sacred-walk-desert.trycloudflare.com/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-
-    message: text,
-
-    state: {
-
-        affection: 40,
-
-        memories: [],
-
-        history: getHistory()
+        return JSON.parse(saved);
 
     }
 
-})
+
+    return {
+
+        affection:40,
+
+        memories:[],
+
+        history:[]
+
+    };
+
+}
+
+
+
+function saveGameState(state){
+
+    localStorage.setItem(
+        "mathewState",
+        JSON.stringify(state)
+    );
+
+}
+
+
+
+function resetGame(){
+
+    localStorage.setItem(
+
+        "mathewState",
+
+        JSON.stringify({
+
+            affection:40,
+
+            memories:[],
+
+            history:[]
+
         })
 
-      const data = await res.json();
+    );
 
-      document.getElementById("typing")?.remove();
 
-      addBubble(data.reply, "mathew");
-      addToHistory(text, data.reply);
-      updateMeter(data.affection);
-      updateEmotion(data.emotion);
-      showReason(data.change, data.reason);
+    location.reload();
 
-    } catch (err) {
-      document.getElementById("typing")?.remove();
-      portrait.src = "images/default.jpg";
-      badge.textContent = "default";
-      addBubble("(Connection error — is the server running?)", "system");
+}
+
+
+
+// ===============================
+// History
+// ===============================
+
+
+function addToHistory(user, mathew){
+
+
+    let state = getGameState();
+
+
+    state.history.push({
+
+        user:user,
+
+        mathew:mathew
+
+    });
+
+
+
+    state.history =
+        state.history.slice(-MAX_HISTORY);
+
+
+
+    saveGameState(state);
+
+}
+
+
+
+
+
+// ===============================
+// UI
+// ===============================
+
+
+function updateMeter(affection){
+
+
+    document
+    .getElementById("meterFill")
+    .style.width =
+    affection+"%";
+
+
+
+    document
+    .getElementById("affectionNum")
+    .textContent =
+    affection+" / 100";
+
+
+
+    const hearts =
+    document.querySelectorAll(".heart");
+
+
+
+    const filled =
+    Math.ceil(
+        affection / 100 * 5
+    );
+
+
+
+    hearts.forEach(
+        (h,i)=>{
+
+            h.classList.toggle(
+                "filled",
+                i < filled
+            );
+
+        }
+    );
+
+}
+
+
+
+function updateEmotion(emotion){
+
+
+    const badge =
+    document.getElementById(
+        "emotionBadge"
+    );
+
+
+    const portrait =
+    document.getElementById(
+        "portrait"
+    );
+
+
+    badge.textContent =
+    emotion;
+
+
+
+    portrait.src =
+    `images/${emotion}.jpg`;
+
+
+
+    portrait.onerror=()=>{
+
+        portrait.src =
+        "images/default.jpg";
+
+    };
+
+
+}
+
+
+
+
+function addBubble(text,who){
+
+
+    const chat =
+    document.getElementById(
+        "chat"
+    );
+
+
+    const div =
+    document.createElement(
+        "div"
+    );
+
+
+    div.className =
+    `bubble ${who}`;
+
+
+    div.textContent =
+    text;
+
+
+
+    chat.appendChild(div);
+
+
+    chat.scrollTop =
+    chat.scrollHeight;
+
+}
+
+
+
+
+function showReason(change,reason){
+
+
+    const el =
+    document.getElementById(
+        "reasonText"
+    );
+
+
+    const sign =
+    change > 0 ? "+" : "";
+
+
+
+    if(change !== 0){
+
+
+        el.innerHTML =
+        `<span style="font-weight:700">
+        ${sign}${change}
+        </span> — ${reason}`;
+
+
     }
 
-    btn.disabled = false;
-    input.focus();
-  }
+    else{
 
-  document.getElementById("message").addEventListener("keydown", e => {
-    if (e.key === "Enter") sendMessage();
-  });
+
+        el.textContent =
+        reason;
+
+
+    }
+
+
+}
+
+
+
+
+
+// ===============================
+// Send Message
+// ===============================
+
+
+async function sendMessage(){
+
+
+const input =
+document.getElementById(
+"message"
+);
+
+
+const btn =
+document.getElementById(
+"sendBtn"
+);
+
+
+const portrait =
+document.getElementById(
+"portrait"
+);
+
+
+const badge =
+document.getElementById(
+"emotionBadge"
+);
+
+
+
+const text =
+input.value.trim();
+
+
+
+if(!text)
+return;
+
+
+
+addBubble(
+text,
+"player"
+);
+
+
+
+input.value="";
+
+
+btn.disabled=true;
+
+
+
+
+// thinking image
+
+
+const n =
+Math.floor(
+Math.random()*19
+)+1;
+
+
+
+portrait.src =
+`images/thinking${n}.jpg`;
+
+
+badge.textContent =
+"thinking...";
+
+
+
+
+// typing bubble
+
+
+const typing =
+document.createElement(
+"div"
+);
+
+
+typing.className =
+"bubble mathew";
+
+
+typing.textContent =
+"...";
+
+
+typing.id =
+"typing";
+
+
+
+document
+.getElementById("chat")
+.appendChild(
+typing
+);
+
+
+
+try{
+
+
+let state =
+getGameState();
+
+
+
+const res =
+await fetch(
+
+"https://theology-sacred-walk-desert.trycloudflare.com/chat",
+
+{
+
+
+method:"POST",
+
+
+headers:{
+
+
+"Content-Type":
+"application/json"
+
+},
+
+
+body:JSON.stringify({
+
+message:text,
+
+
+state:state
+
+
+})
+
+
+}
+
+);
+
+
+
+
+const data =
+await res.json();
+
+
+
+
+document
+.getElementById(
+"typing"
+)
+?.remove();
+
+
+
+
+addBubble(
+data.reply,
+"mathew"
+);
+
+
+
+
+// update browser memory
+
+
+state.affection =
+data.affection;
+
+
+
+state.memories =
+data.memories;
+
+
+
+addToHistory(
+text,
+data.reply
+);
+
+
+
+saveGameState(
+state
+);
+
+
+
+
+updateMeter(
+data.affection
+);
+
+
+updateEmotion(
+data.emotion
+);
+
+
+
+showReason(
+data.change,
+data.reason
+);
+
+
+
+}
+
+
+catch(err){
+
+
+console.log(err);
+
+
+document
+.getElementById(
+"typing"
+)
+?.remove();
+
+
+
+addBubble(
+"Connection error",
+"system"
+);
+
+
+badge.textContent =
+"default";
+
+
+portrait.src =
+"images/default.jpg";
+
+
+}
+
+
+
+btn.disabled=false;
+
+input.focus();
+
+
+}
+
+
+
+
+
+document
+.getElementById("message")
+.addEventListener(
+"keydown",
+(e)=>{
+
+if(e.key==="Enter")
+sendMessage();
+
+}
+
+);
+
+
+// load saved affection on startup
+
+const startState =
+getGameState();
+
+
+updateMeter(
+startState.affection
+);
+
+
 </script>
 </body>
 </html>
