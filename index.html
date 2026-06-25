@@ -1,56 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mathew Dating Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --beige:       #F5EFE6;
+      --beige-dark:  #EAE0D0;
+      --beige-mid:   #D9CBBA;
+      --brown-light: #B89C82;
+      --brown:       #7C5C3E;
+      --brown-dark:  #4A3728;
+      --white:       #FDFAF6;
+      --text:        #3A2A1E;
+      --text-muted:  #7C6655;
+      --heart:       #C0634E;
+    }
+
+    body {
+      background: var(--beige);
+      font-family: 'Lato', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    #game {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+      width: 100%;
+      max-width: 860px;
+      background: var(--white);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1.5px solid var(--beige-mid);
+      box-shadow: 0 8px 40px rgba(74,55,40,0.13);
+      min-height: 580px;
+    }
+
+    /* ---- LEFT PANEL ---- */
+    #leftPanel {
+      background: var(--brown-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.25rem 1.5rem;
+      gap: 1.25rem;
+      position: relative;
+    }
+
+    #leftPanel h1 {
+      font-family: 'Playfair Display', serif;
+      color: var(--beige);
+      font-size: 1.15rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.03em;
+      line-height: 1.4;
+    }
+
+    #portraitWrap {
+      width: 180px;
+      height: 200px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 3px solid var(--brown-light);
+      background: var(--brown);
+      flex-shrink: 0;
+    }
+
+    #portrait {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Emotion label */
+    #emotionBadge {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--brown-light);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--brown-light);
+      border-radius: 20px;
+      padding: 3px 12px;
+      min-height: 22px;
+    }
+
+    /* Affection meter */
+    #meterWrap {
+      width: 100%;
+      margin-top: auto;
+    }
+
+    #meterLabel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--beige-mid);
+      font-size: 0.78rem;
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    #meterLabel span:last-child {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--beige);
+    }
+
+    #meterBar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    #meterFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--brown-light), #E8B97A);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    #heartRow {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+
+    .heart {
+      font-size: 14px;
+      color: rgba(255,255,255,0.2);
+      transition: color 0.3s;
+    }
+    .heart.filled { color: var(--heart); }
+
+    /* ---- RIGHT PANEL ---- */
+    #rightPanel {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+    }
+
+    #chatHeader {
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--beige-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #chatHeader .dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--brown-light);
+    }
+
+    #chatHeader span {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 0;
+      max-height: 400px;
+    }
+
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-thumb { background: var(--beige-mid); border-radius: 99px; }
+
+    /* Chat bubbles */
+    .bubble {
+      max-width: 75%;
+      padding: 0.65rem 1rem;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--text);
+      animation: fadeUp 0.2s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .bubble.player {
+      background: var(--brown);
+      color: var(--white);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bubble.mathew {
+      background: var(--beige-dark);
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble.system {
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      align-self: center;
+      font-style: italic;
+    }
+
+    #reasonText {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 0 1.25rem;
+      min-height: 1rem;
+    }
+
+    /* ---- INPUT AREA ---- */
+    #inputArea {
+      display: flex;
+      gap: 8px;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--beige-dark);
+    }
+
+    #message {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: 1.5px solid var(--beige-mid);
+      border-radius: 99px;
+      background: var(--beige);
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #message::placeholder { color: var(--text-muted); }
+    #message:focus { border-color: var(--brown-light); }
+
+    #sendBtn {
+      background: var(--brown);
+      color: var(--white);
+      border: none;
+      border-radius: 99px;
+      padding: 0 1.25rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    #sendBtn:hover { background: var(--brown-dark); }
+    #sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 620px) {
+      #game { grid-template-columns: 1fr; }
+      #leftPanel { flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 1rem; }
+      #leftPanel h1 { width: 100%; }
+      #portraitWrap { width: 120px; height: 130px; }
+    }
+  </style>
+</head>
 <body>
 
-
 <div id="game">
+  <div id="leftPanel">
+    <h1>Mathew<br>Dating Simulator</h1>
 
+    <div id="portraitWrap">
+      <img id="portrait" src="images/default.jpg" alt="Mathew">
+    </div>
 
-<div id="leftPanel">
+    <div id="emotionBadge">default</div>
 
-<h1>Mathew Dating Simulator</h1>
+    <div id="meterWrap">
+      <div id="meterLabel">
+        <span>Affection</span>
+        <span id="affectionNum">0 / 100</span>
+      </div>
+      <div id="meterBar"><div id="meterFill"></div></div>
+      <div id="heartRow">
+        <span class="heart" id="h1">♥</span>
+        <span class="heart" id="h2">♥</span>
+        <span class="heart" id="h3">♥</span>
+        <span class="heart" id="h4">♥</span>
+        <span class="heart" id="h5">♥</span>
+      </div>
+    </div>
+  </div>
 
+  <div id="rightPanel">
+    <div id="chatHeader">
+      <div class="dot"></div>
+      <span>CHATTING WITH MATHEW</span>
+    </div>
 
-<img
-id="portrait"
-src="images/default.jpg"
-alt="Mathew"
->
+    <div id="chat">
+      <div class="bubble system">Say something to start the conversation...</div>
+    </div>
 
+    <div id="reasonText"></div>
 
-<div id="meter">
-Affection: 0/100
+    <div id="inputArea">
+      <input id="message" type="text" placeholder="Say something to Mathew...">
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
 </div>
 
+<script>
+  const VALID_EMOTIONS = ["default","happy","angry","flirty","embarrassed","sad","laughing"];
 
-</div>
+  function updateMeter(affection) {
+    document.getElementById("meterFill").style.width = affection + "%";
+    document.getElementById("affectionNum").textContent = affection + " / 100";
+    const hearts = document.querySelectorAll(".heart");
+    const filled = Math.ceil((affection / 100) * 5);
+    hearts.forEach((h, i) => h.classList.toggle("filled", i < filled));
+  }
 
+  function updateEmotion(emotion) {
+    const badge = document.getElementById("emotionBadge");
+    badge.textContent = emotion;
+    const portrait = document.getElementById("portrait");
+    const src = `images/${emotion}.jpg`;
+    const img = new Image();
+    img.onload = () => { portrait.src = src; };
+    img.onerror = () => { portrait.src = "images/default.jpg"; };
+    img.src = src;
+  }
 
+  function addBubble(text, who) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.className = `bubble ${who}`;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
 
-<div id="rightPanel">
+  function showReason(change, reason) {
+    const el = document.getElementById("reasonText");
+    const sign = change > 0 ? "+" : "";
+    const color = change > 0 ? "#7C5C3E" : change < 0 ? "#C0634E" : "#9A8070";
+    el.innerHTML = change !== 0
+      ? `<span style="color:${color};font-weight:700">${sign}${change}</span> — ${reason}`
+      : `<span style="color:#9A8070">${reason}</span>`;
+  }
 
+  async function sendMessage() {
+    const input = document.getElementById("message");
+    const btn = document.getElementById("sendBtn");
+    const text = input.value.trim();
+    if (!text) return;
 
-<div id="chat"></div>
+    addBubble(text, "player");
+    input.value = "";
+    btn.disabled = true;
 
+    const typing = document.createElement("div");
+    typing.className = "bubble mathew";
+    typing.textContent = "...";
+    typing.id = "typing";
+    document.getElementById("chat").appendChild(typing);
+    document.getElementById("chat").scrollTop = 99999;
 
-<div id="inputArea">
+    try {
+      const res = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
 
-<input
-id="message"
-placeholder="Say something to Mathew..."
->
+      const data = await res.json();
+      document.getElementById("typing")?.remove();
 
+      addBubble(data.reply, "mathew");
+      updateMeter(data.affection);
+      updateEmotion(data.emotion);
+      showReason(data.change, data.reason);
 
-<button onclick="sendMessage()">
-Send
-</button>
+    } catch (err) {
+      document.getElementById("typing")?.remove();
+      addBubble("(Connection error — is the server running?)", "system");
+    }
 
+    btn.disabled = false;
+    input.focus();
+  }
 
-</div>
-
-
-</div>
-
-
-</div>
-
-
+  document.getElementById("message").addEventListener("keydown", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>
 </body>
+</html>
