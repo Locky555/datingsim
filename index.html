@@ -455,7 +455,7 @@ function addToHistory(userMessage, mathewReply) {
     badge.textContent = "thinking...";
 
     try {
-      const res = await fetch("http://localhost:8000/chat", {
+      const res = await fetch("https://jefferson-conducted-objects-emily.trycloudflare.com/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
