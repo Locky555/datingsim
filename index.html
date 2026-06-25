@@ -389,8 +389,19 @@
     document.getElementById("chat").appendChild(typing);
     document.getElementById("chat").scrollTop = 99999;
 
+    // Pick one random thinking face for this prompt
+    const portrait = document.getElementById("portrait");
+    const badge = document.getElementById("emotionBadge");
+    badge.textContent = "thinking...";
+
+    const n = Math.floor(Math.random() * 19) + 1;
+    const thinkingImg = new Image();
+    thinkingImg.onload = () => { portrait.src = thinkingImg.src; };
+    thinkingImg.onerror = () => { portrait.src = "images/default.jpg"; };
+    thinkingImg.src = `images/thinking${n}.jpg`;
+
     try {
-      const res = await fetch("https://sol-suits-alternatives-rough.trycloudflare.com/chat", {
+      const res = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
@@ -406,6 +417,8 @@
 
     } catch (err) {
       document.getElementById("typing")?.remove();
+      portrait.src = "images/default.jpg";
+      badge.textContent = "default";
       addBubble("(Connection error — is the server running?)", "system");
     }
 
