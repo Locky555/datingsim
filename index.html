@@ -316,11 +316,11 @@
   <div id="rightPanel">
     <div id="chatHeader">
       <div class="dot"></div>
-      <span></span>
+      <span>CHATTING WITH MATHEW</span>
     </div>
 
     <div id="chat">
-      <div class="bubble system">Sorry first message always takes fucking ages to load and boot up the ai</div>
+      <div class="bubble system">Say something to start the conversation...</div>
     </div>
 
     <div id="reasonText"></div>
@@ -389,8 +389,15 @@
     document.getElementById("chat").appendChild(typing);
     document.getElementById("chat").scrollTop = 99999;
 
+    // Pick one random thinking face for this prompt - set immediately
+    const portrait = document.getElementById("portrait");
+    const badge = document.getElementById("emotionBadge");
+    const n = Math.floor(Math.random() * 19) + 1;
+    portrait.src = `images/thinking${n}.jpg`;
+    badge.textContent = "thinking...";
+
     try {
-      const res = await fetch("https://structure-sets-item-pixel.trycloudflare.com/chat", {
+      const res = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
@@ -406,6 +413,8 @@
 
     } catch (err) {
       document.getElementById("typing")?.remove();
+      portrait.src = "images/default.jpg";
+      badge.textContent = "default";
       addBubble("(Connection error — is the server running?)", "system");
     }
 
