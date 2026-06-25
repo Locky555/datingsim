@@ -335,6 +335,64 @@
 <script>
   const VALID_EMOTIONS = ["default","happy","angry","flirty","embarrassed","sad","laughing"];
 
+  // ---------------------------------
+// Conversation memory (session only)
+// ---------------------------------
+
+const MAX_HISTORY = 10;
+
+
+function getHistory() {
+
+  const saved = sessionStorage.getItem(
+    "conversationHistory"
+  );
+
+  return saved ? JSON.parse(saved) : [];
+
+}
+
+
+
+function saveHistory(history) {
+
+  sessionStorage.setItem(
+    "conversationHistory",
+    JSON.stringify(history)
+  );
+
+}
+
+
+
+function addToHistory(userMessage, mathewReply) {
+
+  let history = getHistory();
+
+
+  history.push({
+
+    user: userMessage,
+
+    mathew: mathewReply
+
+  });
+
+
+
+  // Keep only the latest 10 conversations
+
+  if(history.length > MAX_HISTORY){
+
+    history.shift();
+
+  }
+
+
+  saveHistory(history);
+
+}
+
   function updateMeter(affection) {
     document.getElementById("meterFill").style.width = affection + "%";
     document.getElementById("affectionNum").textContent = affection + " / 100";
@@ -400,16 +458,33 @@
       const res = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({
+
+        message: text,
+
+        history: getHistory()
+
+      })
       });
 
       const data = await res.json();
       document.getElementById("typing")?.remove();
 
       addBubble(data.reply, "mathew");
-      updateMeter(data.affection);
-      updateEmotion(data.emotion);
-      showReason(data.change, data.reason);
+
+
+      // Save this conversation to browser memory
+    addToHistory(
+    text,
+    data.reply
+    );
+
+
+updateMeter(data.affection);
+
+updateEmotion(data.emotion);
+
+showReason(data.change, data.reason);
 
     } catch (err) {
       document.getElementById("typing")?.remove();
