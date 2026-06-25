@@ -45,7 +45,6 @@
       min-height: 580px;
     }
 
-    /* ---- LEFT PANEL ---- */
     #leftPanel {
       background: var(--brown-dark);
       display: flex;
@@ -83,7 +82,6 @@
       display: block;
     }
 
-    /* Emotion label */
     #emotionBadge {
       font-size: 0.72rem;
       letter-spacing: 0.08em;
@@ -96,7 +94,6 @@
       min-height: 22px;
     }
 
-    /* Affection meter */
     #meterWrap {
       width: 100%;
       margin-top: auto;
@@ -148,7 +145,6 @@
     }
     .heart.filled { color: var(--heart); }
 
-    /* ---- RIGHT PANEL ---- */
     #rightPanel {
       display: flex;
       flex-direction: column;
@@ -189,7 +185,6 @@
     #chat::-webkit-scrollbar { width: 4px; }
     #chat::-webkit-scrollbar-thumb { background: var(--beige-mid); border-radius: 99px; }
 
-    /* Chat bubbles */
     .bubble {
       max-width: 75%;
       padding: 0.65rem 1rem;
@@ -236,7 +231,6 @@
       min-height: 1rem;
     }
 
-    /* ---- INPUT AREA ---- */
     #inputArea {
       display: flex;
       gap: 8px;
@@ -333,66 +327,30 @@
 </div>
 
 <script>
-  const VALID_EMOTIONS = ["default","happy","angry","flirty","embarrassed","sad","laughing"];
+  // -------------------------------------------------
+  // Conversation history (session only)
+  // -------------------------------------------------
+  const MAX_HISTORY = 10;
 
-  // ---------------------------------
-// Conversation memory (session only)
-// ---------------------------------
-
-const MAX_HISTORY = 10;
-
-
-function getHistory() {
-
-  const saved = sessionStorage.getItem(
-    "conversationHistory"
-  );
-
-  return saved ? JSON.parse(saved) : [];
-
-}
-
-
-
-function saveHistory(history) {
-
-  sessionStorage.setItem(
-    "conversationHistory",
-    JSON.stringify(history)
-  );
-
-}
-
-
-
-function addToHistory(userMessage, mathewReply) {
-
-  let history = getHistory();
-
-
-  history.push({
-
-    user: userMessage,
-
-    mathew: mathewReply
-
-  });
-
-
-
-  // Keep only the latest 10 conversations
-
-  if(history.length > MAX_HISTORY){
-
-    history.shift();
-
+  function getHistory() {
+    const saved = sessionStorage.getItem("conversationHistory");
+    return saved ? JSON.parse(saved) : [];
   }
 
+  function saveHistory(history) {
+    sessionStorage.setItem("conversationHistory", JSON.stringify(history));
+  }
 
-  saveHistory(history);
+  function addToHistory(userMessage, mathewReply) {
+    let history = getHistory();
+    history.push({ user: userMessage, mathew: mathewReply });
+    if (history.length > MAX_HISTORY) history.shift();
+    saveHistory(history);
+  }
 
-}
-
+  // -------------------------------------------------
+  // UI helpers
+  // -------------------------------------------------
   function updateMeter(affection) {
     document.getElementById("meterFill").style.width = affection + "%";
     document.getElementById("affectionNum").textContent = affection + " / 100";
@@ -403,13 +361,10 @@ function addToHistory(userMessage, mathewReply) {
 
   function updateEmotion(emotion) {
     const badge = document.getElementById("emotionBadge");
-    badge.textContent = emotion;
     const portrait = document.getElementById("portrait");
-    const src = `images/${emotion}.jpg`;
-    const img = new Image();
-    img.onload = () => { portrait.src = src; };
-    img.onerror = () => { portrait.src = "images/default.jpg"; };
-    img.src = src;
+    badge.textContent = emotion;
+    portrait.src = `images/${emotion}.jpg`;
+    portrait.onerror = () => { portrait.src = "images/default.jpg"; };
   }
 
   function addBubble(text, who) {
@@ -430,9 +385,14 @@ function addToHistory(userMessage, mathewReply) {
       : `<span style="color:#9A8070">${reason}</span>`;
   }
 
+  // -------------------------------------------------
+  // Send message
+  // -------------------------------------------------
   async function sendMessage() {
     const input = document.getElementById("message");
     const btn = document.getElementById("sendBtn");
+    const portrait = document.getElementById("portrait");
+    const badge = document.getElementById("emotionBadge");
     const text = input.value.trim();
     if (!text) return;
 
@@ -440,6 +400,13 @@ function addToHistory(userMessage, mathewReply) {
     input.value = "";
     btn.disabled = true;
 
+    // Thinking state
+    const n = Math.floor(Math.random() * 19) + 1;
+    portrait.src = `images/thinking${n}.jpg`;
+    portrait.onerror = () => { portrait.src = "images/default.jpg"; };
+    badge.textContent = "thinking...";
+
+    // Typing bubble
     const typing = document.createElement("div");
     typing.className = "bubble mathew";
     typing.textContent = "...";
@@ -447,44 +414,25 @@ function addToHistory(userMessage, mathewReply) {
     document.getElementById("chat").appendChild(typing);
     document.getElementById("chat").scrollTop = 99999;
 
-    // Pick one random thinking face for this prompt - set immediately
-    const portrait = document.getElementById("portrait");
-    const badge = document.getElementById("emotionBadge");
-    const n = Math.floor(Math.random() * 18) + 2;
-    portrait.src = `images/thinking${n}.jpg`;
-    badge.textContent = "thinking...";
-
     try {
       const res = await fetch("https://jefferson-conducted-objects-emily.trycloudflare.com/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-
-        message: text,
-
-        history: getHistory()
-
-      })
+          message: text,
+          history: getHistory()
+        })
       });
 
       const data = await res.json();
+
       document.getElementById("typing")?.remove();
 
       addBubble(data.reply, "mathew");
-
-
-      // Save this conversation to browser memory
-    addToHistory(
-    text,
-    data.reply
-    );
-
-
-updateMeter(data.affection);
-
-updateEmotion(data.emotion);
-
-showReason(data.change, data.reason);
+      addToHistory(text, data.reply);
+      updateMeter(data.affection);
+      updateEmotion(data.emotion);
+      showReason(data.change, data.reason);
 
     } catch (err) {
       document.getElementById("typing")?.remove();
