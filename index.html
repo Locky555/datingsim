@@ -419,10 +419,21 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: text,
-          history: getHistory()
+
+    message: text,
+
+    state: {
+
+        affection: 40,
+
+        memories: [],
+
+        history: getHistory()
+
+    }
+
+})
         })
-      });
 
       const data = await res.json();
 
