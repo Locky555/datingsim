@@ -340,7 +340,7 @@ const MAX_HISTORY = 10;
 function getGameState(){
 
     const saved =
-        localStorage.getItem("mathewState");
+        sessionStorage.getItem("mathewState");
 
 
     if(saved){
@@ -366,7 +366,7 @@ function getGameState(){
 
 function saveGameState(state){
 
-    localStorage.setItem(
+    sessionStorage.setItem(
         "mathewState",
         JSON.stringify(state)
     );
@@ -377,7 +377,7 @@ function saveGameState(state){
 
 function resetGame(){
 
-    localStorage.setItem(
+    sessionStorage.setItem(
 
         "mathewState",
 
